@@ -939,7 +939,7 @@ namespace IMGUIZMO_NAMESPACE
       // ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
       // ImGui::Begin("gizmo", NULL, flags);
-      gContext.mDrawList = ImGui::GetBackgroundDrawList();
+      gContext.mDrawList = ImGui::GetWindowDrawList();
       // ImGui::End();
       // ImGui::PopStyleVar();
       // ImGui::PopStyleColor(2);
