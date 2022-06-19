@@ -641,6 +641,7 @@ namespace IMGUIZMO_NAMESPACE
       }
 
       ImDrawList* mDrawList;
+      ImDrawList* mBgDrawList;
 
       MODE mMode;
       matrix_t mViewMat;
@@ -939,7 +940,9 @@ namespace IMGUIZMO_NAMESPACE
       // ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
       // ImGui::Begin("gizmo", NULL, flags);
+
       gContext.mDrawList = ImGui::GetWindowDrawList();
+      gContext.mBgDrawList = ImGui::GetBackgroundDrawList();
       // ImGui::End();
       // ImGui::PopStyleVar();
       // ImGui::PopStyleColor(2);
@@ -1190,7 +1193,7 @@ namespace IMGUIZMO_NAMESPACE
       {
          return;
       }
-      ImDrawList* drawList = gContext.mDrawList;
+      ImDrawList* drawList = gContext.mBgDrawList;  // draw on the background
 
       // colors
       ImU32 colors[7];
@@ -1287,7 +1290,7 @@ namespace IMGUIZMO_NAMESPACE
 
    static void DrawScaleGizmo(OPERATION op, int type)
    {
-      ImDrawList* drawList = gContext.mDrawList;
+      ImDrawList* drawList = gContext.mBgDrawList;
 
       if(!Intersects(op, SCALE))
       {
@@ -1374,7 +1377,7 @@ namespace IMGUIZMO_NAMESPACE
 
    static void DrawScaleUniveralGizmo(OPERATION op, int type)
    {
-      ImDrawList* drawList = gContext.mDrawList;
+      ImDrawList* drawList = gContext.mBgDrawList;
 
       if (!Intersects(op, SCALEU))
       {
@@ -1458,7 +1461,7 @@ namespace IMGUIZMO_NAMESPACE
 
    static void DrawTranslationGizmo(OPERATION op, int type)
    {
-      ImDrawList* drawList = gContext.mDrawList;
+      ImDrawList* drawList = gContext.mBgDrawList;
       if (!drawList)
       {
          return;
