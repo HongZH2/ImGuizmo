@@ -1340,10 +1340,10 @@ namespace IMGUIZMO_NAMESPACE
                }
                drawList->AddCircleFilled(worldDirSSpace, 6.f, colors[i + 1]);
 
-               if (gContext.mAxisFactor[i] < 0.f)
-               {
-                  DrawHatchedAxis(dirAxis * scaleDisplay[i]);
-               }
+               // if (gContext.mAxisFactor[i] < 0.f)
+               // {
+               //    DrawHatchedAxis(dirAxis * scaleDisplay[i]);
+               // }
             }
          }
       }
@@ -1505,10 +1505,10 @@ namespace IMGUIZMO_NAMESPACE
                drawList->AddTriangleFilled(worldDirSSpace - dir, a + ortogonalDir, a - ortogonalDir, colors[i + 1]);
                // Arrow head end
 
-               if (gContext.mAxisFactor[i] < 0.f)
-               {
-                  DrawHatchedAxis(dirAxis);
-               }
+               // if (gContext.mAxisFactor[i] < 0.f)
+               // {
+               //    DrawHatchedAxis(dirAxis);
+               // }
             }
          }
          // draw plane
@@ -2022,7 +2022,7 @@ namespace IMGUIZMO_NAMESPACE
       return type;
    }
 
-   static bool HandleTranslation(float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
+   static bool HandleTranslation(float * pos, float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
    {
       if(!Intersects(op, TRANSLATE) || type != MT_NONE)
       {
@@ -2133,10 +2133,13 @@ namespace IMGUIZMO_NAMESPACE
             gContext.mRelativeOrigin = (gContext.mTranslationPlanOrigin - gContext.mModel.v.position) * (1.f / gContext.mScreenFactor);
          }
       }
+      pos[0] = ((matrix_t*)matrix)->v.position.x;
+      pos[1] = ((matrix_t*)matrix)->v.position.y;
+      pos[2] = ((matrix_t*)matrix)->v.position.z;
       return modified;
    }
 
-   static bool HandleScale(float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
+   static bool HandleScale(float* scale, float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
    {
       if((!Intersects(op, SCALE) && !Intersects(op, SCALEU)) || type != MT_NONE || !gContext.mbMouseOver)
       {
@@ -2192,11 +2195,15 @@ namespace IMGUIZMO_NAMESPACE
             float ratio = Dot(axisValue, baseVector + delta) / Dot(axisValue, baseVector);
 
             gContext.mScale[axisIndex] = max(ratio, 0.001f);
+            scale[axisIndex] = gContext.mScale[axisIndex];
          }
          else
          {
             float scaleDelta = (io.MousePos.x - gContext.mSaveMousePosx) * 0.01f;
             gContext.mScale.Set(max(1.f + scaleDelta, 0.001f));
+            scale[0] = gContext.mScale[0];
+            scale[1] = gContext.mScale[0];
+            scale[2] = gContext.mScale[0];
          }
 
          // snap
@@ -2249,7 +2256,7 @@ namespace IMGUIZMO_NAMESPACE
       return modified;
    }
 
-   static bool HandleRotation(float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
+   static bool HandleRotation(float* rot, float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
    {
       if(!Intersects(op, ROTATE) || type != MT_NONE || !gContext.mbMouseOver)
       {
@@ -2313,6 +2320,20 @@ namespace IMGUIZMO_NAMESPACE
 
          matrix_t deltaRotation;
          deltaRotation.RotationAxis(rotationAxisLocalSpace, gContext.mRotationAngle - gContext.mRotationAngleOrigin);
+         
+         // accumlate the rotation
+         float delta_angle = RAD2DEG * (gContext.mRotationAngle - gContext.mRotationAngleOrigin);
+         
+         if(rotationAxisLocalSpace.x == 1.0f){
+            rot[0] += delta_angle;
+         }
+         else if(rotationAxisLocalSpace.y == 1.0f){
+            rot[1] += delta_angle;
+         }
+         else if(rotationAxisLocalSpace.z == 1.0f){
+            rot[2] += delta_angle;
+         }
+
          if (gContext.mRotationAngle != gContext.mRotationAngleOrigin)
          {
             modified = true;
@@ -2409,9 +2430,12 @@ namespace IMGUIZMO_NAMESPACE
      gContext.mAllowAxisFlip = value;
    }
 
-   bool Manipulate(const float* view, const float* projection, OPERATION operation, MODE mode, float* matrix, float* deltaMatrix, const float* snap, const float* localBounds, const float* boundsSnap)
+   bool Manipulate(const float* view, const float* projection, OPERATION operation, MODE mode,
+                   float* pos, float* scale, float* rot, float* matrix, float* deltaMatrix, const float* snap, const float* localBounds, const float* boundsSnap)
    {
       // Scale is always local or matrix will be skewed when applying world scale or oriented matrix
+
+
       ComputeContext(view, projection, matrix, (operation & SCALE) ? LOCAL : mode);
 
       // set delta to identity
@@ -2435,9 +2459,19 @@ namespace IMGUIZMO_NAMESPACE
       {
          if (!gContext.mbUsingBounds)
          {
-            manipulated = HandleTranslation(matrix, deltaMatrix, operation, type, snap) ||
-                          HandleScale(matrix, deltaMatrix, operation, type, snap) ||
-                          HandleRotation(matrix, deltaMatrix, operation, type, snap);
+            switch(operation){
+               case TRANSLATE:
+                  manipulated = HandleTranslation(pos, matrix, deltaMatrix, operation, type, snap);
+                  break;
+               case SCALE:
+                  manipulated = HandleScale(scale, matrix, deltaMatrix, operation, type, snap);
+                  break;
+               case ROTATE:
+                  manipulated = HandleRotation(rot, matrix, deltaMatrix, operation, type, snap);
+                  break;
+               default:
+                  break;
+            }
          }
       }
 
